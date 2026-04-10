@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/temas/tema_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SupabaseConexion.inicializar();
+  SupabaseConexion.inicializar();
 
   runApp(const MyApp());
 }

@@ -14,7 +14,6 @@ class AppTheme {
       onSecondary: AppColors.blanco,
       onTertiary: AppColors.blanco,
       onSurface: AppColors.negro,
-      background: AppColors.fondo,
     );
 
     final TextTheme baseTextTheme = GoogleFonts.montserratTextTheme();

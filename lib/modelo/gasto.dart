@@ -7,6 +7,7 @@ class Gasto {
 		required this.pagadoPor,
 		this.fecha,
 		this.divididoEntre = const <String>[],
+		this.reparto = const <String, double>{},
 	});
 
 	final String id;
@@ -16,6 +17,7 @@ class Gasto {
 	final String pagadoPor;
 	final DateTime? fecha;
 	final List<String> divididoEntre;
+	final Map<String, double> reparto;
 
 	Gasto copyWith({
 		String? id,
@@ -25,6 +27,7 @@ class Gasto {
 		String? pagadoPor,
 		DateTime? fecha,
 		List<String>? divididoEntre,
+		Map<String, double>? reparto,
 	}) {
 		return Gasto(
 			id: id ?? this.id,
@@ -34,21 +37,33 @@ class Gasto {
 			pagadoPor: pagadoPor ?? this.pagadoPor,
 			fecha: fecha ?? this.fecha,
 			divididoEntre: divididoEntre ?? this.divididoEntre,
+			reparto: reparto ?? this.reparto,
 		);
 	}
 
 	factory Gasto.fromMap(Map<String, dynamic> map) {
+		final dynamic repartoRaw = map['reparto'];
+		final Map<String, double> reparto = repartoRaw is Map
+				? repartoRaw.map(
+					(dynamic key, dynamic value) => MapEntry<String, double>(
+						key.toString(),
+						(value as num?)?.toDouble() ?? 0,
+					),
+				)
+				: <String, double>{};
+
 		return Gasto(
-			id: (map['id'] ?? '').toString(),
-			grupoId: (map['grupo_id'] ?? '').toString(),
-			descripcion: (map['descripcion'] ?? '').toString(),
+			id: (map['id_gasto'] ?? map['id'] ?? '').toString(),
+			grupoId: (map['id_grupo'] ?? map['grupo_id'] ?? '').toString(),
+			descripcion: (map['descripcion'] ?? map['concepto'] ?? '').toString(),
 			monto: ((map['monto'] as num?) ?? 0).toDouble(),
 			pagadoPor: (map['pagado_por'] ?? '').toString(),
-			fecha: _parseFecha(map['fecha']),
+			fecha: _parseFecha(map['fecha'] ?? map['creado_en']),
 			divididoEntre: (map['dividido_entre'] as List<dynamic>?)
 							?.map((dynamic e) => e.toString())
 							.toList() ??
 					<String>[],
+			reparto: reparto,
 		);
 	}
 
@@ -61,6 +76,7 @@ class Gasto {
 			'pagado_por': pagadoPor,
 			'fecha': fecha?.toIso8601String(),
 			'dividido_entre': divididoEntre,
+			'reparto': reparto,
 		};
 	}
 

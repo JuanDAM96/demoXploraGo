@@ -3,14 +3,14 @@ import 'package:xplorago/controladores/gasto_control.dart';
 import 'package:xplorago/controladores/grupo_control.dart';
 import 'package:xplorago/modelo/gasto.dart';
 import 'package:xplorago/modelo/usuario.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
-import 'package:xplorago/vistas/widgets/BottomBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PaginaGasto extends StatefulWidget {
   const PaginaGasto({super.key});
@@ -27,6 +27,256 @@ class _PaginaGastoState extends State<PaginaGasto> {
   final Map<String, Usuario> _usuarios = <String, Usuario>{};
   List<String> _miembroIds = <String>[];
   bool _cargandoUsuarios = false;
+
+  Future<void> _mostrarDialogoNuevoGasto() async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String? grupoId = _grupoControl.grupoActual?.id;
+    if (grupoId == null || _miembroIds.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Necesitas un grupo con miembros para crear gastos.')),
+      );
+      return;
+    }
+
+    final TextEditingController descripcionController = TextEditingController();
+    final TextEditingController montoController = TextEditingController();
+    String pagadoPor = _miembroIds.first;
+    final Set<String> participantes = <String>{..._miembroIds};
+    bool repartoPersonalizado = false;
+    final Map<String, TextEditingController> repartoControllers =
+        <String, TextEditingController>{
+          for (final String id in _miembroIds) id: TextEditingController(),
+        };
+
+    final bool? creado = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder:
+              (
+                BuildContext dialogInnerContext,
+                void Function(void Function()) setDialogState,
+              ) {
+            return AlertDialog(
+              title: const Text('Nuevo gasto'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: descripcionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción',
+                        hintText: 'Ej. Cena, gasolina...',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: montoController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Monto (€)',
+                        hintText: '0.00',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: pagadoPor,
+                      decoration: const InputDecoration(labelText: 'Pagado por'),
+                      items: _miembroIds.map((String id) {
+                        return DropdownMenuItem<String>(
+                          value: id,
+                          child: Text(_nombreUsuario(id)),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          pagadoPor = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Participan en este gasto',
+                      style: AppTextStyles.boton(color: AppColors.verdeOscuro),
+                    ),
+                    const SizedBox(height: 6),
+                    ..._miembroIds.map((String id) {
+                      return CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        value: participantes.contains(id),
+                        title: Text(_nombreUsuario(id)),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (bool? checked) {
+                          setDialogState(() {
+                            if (checked == true) {
+                              participantes.add(id);
+                            } else {
+                              participantes.remove(id);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                    const SizedBox(height: 6),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Reparto personalizado'),
+                      subtitle: const Text(
+                        'Actívalo si no queréis dividir a partes iguales.',
+                      ),
+                      value: repartoPersonalizado,
+                      onChanged: (bool value) {
+                        setDialogState(() {
+                          repartoPersonalizado = value;
+                        });
+                      },
+                    ),
+                    if (!repartoPersonalizado)
+                      Builder(
+                        builder: (_) {
+                          final double monto =
+                              double.tryParse(
+                                montoController.text.trim().replaceAll(',', '.'),
+                              ) ??
+                              0;
+                          final int count = participantes.length;
+                          final double porPersona =
+                              count > 0 ? monto / count : 0;
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              count > 0
+                                  ? 'A partes iguales: ${_euros(porPersona)} por persona.'
+                                  : 'Selecciona al menos un participante.',
+                              style: AppTextStyles.texto(
+                                color: AppColors.grisClaro,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    if (repartoPersonalizado)
+                      ...participantes.map((String id) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextField(
+                            controller: repartoControllers[id],
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: '${_nombreUsuario(id)} paga',
+                              hintText: '0.00',
+                            ),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final String descripcion = descripcionController.text.trim();
+                    final double? monto = double.tryParse(
+                      montoController.text.trim().replaceAll(',', '.'),
+                    );
+
+                    if (descripcion.isEmpty || monto == null || monto <= 0) {
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Introduce descripción y un monto válido.')),
+                      );
+                      return;
+                    }
+                    if (participantes.isEmpty) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Selecciona al menos un participante.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Map<String, double>? reparto;
+                    if (repartoPersonalizado) {
+                      reparto = <String, double>{};
+                      double suma = 0;
+                      for (final String id in participantes) {
+                        final String raw =
+                            repartoControllers[id]?.text.trim() ?? '';
+                        final double? valor = double.tryParse(
+                          raw.replaceAll(',', '.'),
+                        );
+                        if (valor == null || valor <= 0) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Importe inválido para ${_nombreUsuario(id)}.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        reparto[id] = valor;
+                        suma += valor;
+                      }
+
+                      if ((suma - monto).abs() > 0.01) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'La suma del reparto (${_euros(suma)}) debe ser igual al monto (${_euros(monto)}).',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                    }
+
+                    try {
+                      await _gastoControl.crearGasto(
+                        grupoId: grupoId,
+                        descripcion: descripcion,
+                        monto: monto,
+                        pagadoPor: pagadoPor,
+                        divididoEntre: participantes.toList(),
+                        reparto: reparto,
+                      );
+                      if (!dialogContext.mounted) return;
+                      Navigator.pop(dialogContext, true);
+                    } catch (e) {
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('No se pudo crear el gasto: $e')),
+                      );
+                    }
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    // Evitamos dispose inmediato aquí para no chocar con el teardown interno
+    // de los TextField/EditableText al cerrarse el diálogo en ciertos devices.
+
+    if (creado == true && mounted) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Gasto añadido correctamente.')),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -92,10 +342,11 @@ class _PaginaGastoState extends State<PaginaGasto> {
           ..addAll(cargados);
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _cargandoUsuarios = false;
-      });
+      if (mounted) {
+        setState(() {
+          _cargandoUsuarios = false;
+        });
+      }
     }
   }
 
@@ -144,14 +395,21 @@ class _PaginaGastoState extends State<PaginaGasto> {
     };
 
     for (final Gasto gasto in _gastoControl.gastos) {
+      balance[gasto.pagadoPor] = (balance[gasto.pagadoPor] ?? 0) + gasto.monto;
+
+      if (gasto.reparto.isNotEmpty) {
+        for (final MapEntry<String, double> entrada in gasto.reparto.entries) {
+          balance[entrada.key] = (balance[entrada.key] ?? 0) - entrada.value;
+        }
+        continue;
+      }
+
       final List<String> participantes = gasto.divididoEntre.isNotEmpty
           ? gasto.divididoEntre
           : _miembroIds;
       if (participantes.isEmpty) continue;
 
       final double cuota = gasto.monto / participantes.length;
-      balance[gasto.pagadoPor] = (balance[gasto.pagadoPor] ?? 0) + gasto.monto;
-
       for (final String participante in participantes) {
         balance[participante] = (balance[participante] ?? 0) - cuota;
       }
@@ -221,16 +479,6 @@ class _PaginaGastoState extends State<PaginaGasto> {
         foregroundColor: AppColors.blanco,
         menuBackgroundColor: AppColors.blanco,
         menuTextColor: AppColors.verdeOscuro,
-        leading: Container(
-          width: 58,
-          height: 58,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/imagenes/logotopBar.png',
-            fit: BoxFit.cover,
-          ),
-        ),
         menuItems: [
           TopBarMenuItem(
             label: 'Inicio',
@@ -261,6 +509,26 @@ class _PaginaGastoState extends State<PaginaGasto> {
             },
           ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: BottomBar(
+            itemActivo: BottomBarItem.gastos,
+            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
+            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
+            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
+            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _mostrarDialogoNuevoGasto,
+        backgroundColor: AppColors.verdeOscuro,
+        foregroundColor: AppColors.blanco,
+        icon: const Icon(Icons.add),
+        label: const Text('Añadir gasto'),
       ),
       body: Stack(
         children: [
@@ -380,13 +648,6 @@ class _PaginaGastoState extends State<PaginaGasto> {
                     style: AppTextStyles.boton(color: AppColors.negro),
                   ),
                   const SizedBox(height: 96),
-                  BottomBar(
-                    itemActivo: BottomBarItem.gastos,
-                    onAtras: () => Navigator.pushNamed(context, RutasApp.home),
-                    onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-                    onGastos: () =>
-                        Navigator.pushNamed(context, RutasApp.gastos),
-                  ),
                 ],
               ),
             ),

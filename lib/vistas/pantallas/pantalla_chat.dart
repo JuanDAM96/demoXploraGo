@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
-import 'package:xplorago/vistas/widgets/BottomBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaChat extends StatefulWidget {
   const PantallaChat({super.key});
@@ -14,27 +14,9 @@ class PantallaChat extends StatefulWidget {
 }
 
 class _PantallaChatState extends State<PantallaChat> {
-  final TextEditingController _mensajeController = TextEditingController(
-    text: 'Si, nos vemos!',
-  );
+  final TextEditingController _mensajeController = TextEditingController();
 
-  final List<_MensajeUi> _mensajes = <_MensajeUi>[
-    const _MensajeUi(
-      autor: 'Guadalupe',
-      texto: 'A que hora salimos?',
-      esMio: false,
-    ),
-    const _MensajeUi(
-      autor: 'Tu',
-      texto: 'Te parece bien a las 8:00?',
-      esMio: true,
-    ),
-    const _MensajeUi(
-      autor: 'Guadalupe',
-      texto: 'Genial! Nos vemos en tu casa?',
-      esMio: false,
-    ),
-  ];
+  final List<_MensajeUi> _mensajes = <_MensajeUi>[];
 
   @override
   void dispose() {
@@ -63,16 +45,6 @@ class _PantallaChatState extends State<PantallaChat> {
         foregroundColor: AppColors.blanco,
         menuBackgroundColor: AppColors.blanco,
         menuTextColor: AppColors.verdeOscuro,
-        leading: Container(
-          width: 58,
-          height: 58,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/imagenes/logotopBar.png',
-            fit: BoxFit.cover,
-          ),
-        ),
         menuItems: [
           TopBarMenuItem(
             label: 'Inicio',
@@ -104,6 +76,19 @@ class _PantallaChatState extends State<PantallaChat> {
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+          child: BottomBar(
+            itemActivo: BottomBarItem.grupo,
+            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
+            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
+            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
+            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
@@ -132,7 +117,7 @@ class _PantallaChatState extends State<PantallaChat> {
                           ),
                         ),
                         child: Text(
-                          'Viaje Express',
+                          'Chat del grupo',
                           style: AppTextStyles.h2(
                             color: AppColors.blanco,
                           ).copyWith(fontSize: 40 - 4),
@@ -161,6 +146,15 @@ class _PantallaChatState extends State<PantallaChat> {
                                 return _BurbujaMensaje(mensaje: mensaje);
                               },
                             ),
+                            if (_mensajes.isEmpty)
+                              Center(
+                                child: Text(
+                                  'Aun no hay mensajes.',
+                                  style: AppTextStyles.texto(
+                                    color: AppColors.grisClaro,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -215,12 +209,6 @@ class _PantallaChatState extends State<PantallaChat> {
                 ),
               ),
               const SizedBox(height: 16),
-              BottomBar(
-                itemActivo: BottomBarItem.grupo,
-                onAtras: () => Navigator.pushNamed(context, RutasApp.home),
-                onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-                onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
-              ),
             ],
           ),
         ),

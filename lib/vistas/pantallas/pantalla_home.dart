@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/grupo_control.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
-import 'package:xplorago/vistas/widgets/BottomBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaHome extends StatefulWidget {
   const PantallaHome({super.key});
@@ -76,16 +76,6 @@ class _PantallaHomeState extends State<PantallaHome> {
         foregroundColor: AppColors.blanco,
         menuBackgroundColor: AppColors.blanco,
         menuTextColor: AppColors.verdeOscuro,
-        leading: Container(
-          width: 58,
-          height: 58,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/imagenes/logotopBar.png',
-            fit: BoxFit.cover,
-          ),
-        ),
         menuItems: [
           TopBarMenuItem(
             label: 'Inicio',
@@ -117,9 +107,22 @@ class _PantallaHomeState extends State<PantallaHome> {
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+          child: BottomBar(
+            itemActivo: null,
+            onAtras: () => Navigator.pushNamed(context, RutasApp.inicio),
+            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
+            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
+            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+          ),
+        ),
+      ),
       body: AnimatedBuilder(
         animation: _grupoControl,
-        builder: (_, __) {
+        builder: (context, child) {
           final List<dynamic> grupos = _grupoControl.grupos;
           final dynamic principal = grupos.isNotEmpty ? grupos.first : null;
           final dynamic secundario = grupos.length > 1 ? grupos[1] : null;
@@ -134,6 +137,8 @@ class _PantallaHomeState extends State<PantallaHome> {
                     'assets/imagenes/fondo.png',
                     width: 260,
                     height: 260,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -151,16 +156,32 @@ class _PantallaHomeState extends State<PantallaHome> {
                         ).copyWith(fontSize: 36 - 2),
                       ),
                       const SizedBox(height: 10),
-                      _GrupoCard(
-                        titulo:
-                            principal?.nombre?.toString() ?? 'Viaje Express',
-                        destino: principal?.destino?.toString() ?? 'Zafra',
-                        miembros: principal?.miembrosCount as int? ?? 2,
-                        activo: true,
-                        imagePath: 'assets/imagenes/fondoInicio.png',
-                        onTap: () =>
-                            Navigator.pushNamed(context, RutasApp.grupo),
-                      ),
+                      if (principal != null)
+                        _GrupoCard(
+                          titulo: principal.nombre,
+                          destino:
+                              (principal.destino?.trim().isNotEmpty == true)
+                              ? principal.destino!.trim()
+                              : 'Sin destino',
+                          miembros: principal.miembrosCount ?? 0,
+                          activo: true,
+                          imagePath: 'assets/imagenes/fondoInicio.png',
+                          onTap: () =>
+                              Navigator.pushNamed(context, RutasApp.grupo),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.blanco,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.grisClaro),
+                          ),
+                          child: Text(
+                            'Aun no tienes grupos creados o unidos.',
+                            style: AppTextStyles.texto(color: AppColors.negro),
+                          ),
+                        ),
                       const SizedBox(height: 26),
                       Text(
                         'Ultimos Grupos:',
@@ -169,17 +190,32 @@ class _PantallaHomeState extends State<PantallaHome> {
                         ).copyWith(fontSize: 36 - 2),
                       ),
                       const SizedBox(height: 10),
-                      _GrupoCard(
-                        titulo:
-                            secundario?.nombre?.toString() ??
-                            'Viajeros LowCost',
-                        destino: secundario?.destino?.toString() ?? 'Trujillo',
-                        miembros: secundario?.miembrosCount as int? ?? 6,
-                        activo: false,
-                        imagePath: 'assets/imagenes/splash.png',
-                        onTap: () =>
-                            Navigator.pushNamed(context, RutasApp.grupo),
-                      ),
+                      if (secundario != null)
+                        _GrupoCard(
+                          titulo: secundario.nombre,
+                          destino:
+                              (secundario.destino?.trim().isNotEmpty == true)
+                              ? secundario.destino!.trim()
+                              : 'Sin destino',
+                          miembros: secundario.miembrosCount ?? 0,
+                          activo: false,
+                          imagePath: 'assets/imagenes/splash.png',
+                          onTap: () =>
+                              Navigator.pushNamed(context, RutasApp.grupo),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.blanco,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.grisClaro),
+                          ),
+                          child: Text(
+                            'No hay mas grupos para mostrar.',
+                            style: AppTextStyles.texto(color: AppColors.negro),
+                          ),
+                        ),
                       if (_grupoControl.cargando)
                         const Padding(
                           padding: EdgeInsets.only(top: 14),
@@ -244,15 +280,6 @@ class _PantallaHomeState extends State<PantallaHome> {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      BottomBar(
-                        itemActivo: null,
-                        onAtras: () =>
-                            Navigator.pushNamed(context, RutasApp.inicio),
-                        onGrupo: () =>
-                            Navigator.pushNamed(context, RutasApp.grupo),
-                        onGastos: () =>
-                            Navigator.pushNamed(context, RutasApp.gastos),
-                      ),
                     ],
                   ),
                 ),
@@ -311,7 +338,7 @@ class _GrupoCard extends StatelessWidget {
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                errorBuilder: (context, error, stackTrace) =>
                     const Icon(Icons.landscape_rounded),
               ),
             ),

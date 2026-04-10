@@ -39,6 +39,7 @@ class GastoControl extends ChangeNotifier {
     required String pagadoPor,
     DateTime? fecha,
     List<String>? divididoEntre,
+    Map<String, double>? reparto,
   }) async {
     try {
       _error = null;
@@ -49,6 +50,7 @@ class GastoControl extends ChangeNotifier {
         pagadoPor: pagadoPor,
         fecha: fecha,
         divididoEntre: divididoEntre,
+        reparto: reparto,
       );
 
       _gastos.add(gasto);
@@ -113,7 +115,13 @@ class GastoControl extends ChangeNotifier {
     }
 
     for (final gasto in _gastos) {
-      if (gasto.divididoEntre.isNotEmpty) {
+      if (gasto.reparto.isNotEmpty) {
+        for (final entry in gasto.reparto.entries) {
+          if (entry.key != gasto.pagadoPor) {
+            deudas[entry.key] = (deudas[entry.key] ?? 0) + entry.value;
+          }
+        }
+      } else if (gasto.divididoEntre.isNotEmpty) {
         final montoPorPersona = gasto.monto / gasto.divididoEntre.length;
 
         for (final usuarioId in gasto.divididoEntre) {

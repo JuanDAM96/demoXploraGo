@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
 
 class PantallaRegistro extends StatefulWidget {
 	const PantallaRegistro({super.key});
@@ -141,7 +141,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 								'assets/imagenes/fondoInicio.png',
 								height: 320,
 								fit: BoxFit.contain,
-								errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+								errorBuilder: (context, error, stackTrace) =>
+									const SizedBox.shrink(),
 							),
 						),
 					),

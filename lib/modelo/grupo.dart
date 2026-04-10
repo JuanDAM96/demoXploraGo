@@ -42,28 +42,29 @@ class Grupo {
 	}
 
 	factory Grupo.fromMap(Map<String, dynamic> map) {
+		final dynamic miembros = map['miembros'];
+		final int? miembrosDesdeJoin = miembros is List<dynamic>
+				? miembros.length
+				: null;
+
 		return Grupo(
-			id: (map['id'] ?? '').toString(),
+			id: (map['id_grupo'] ?? map['id'] ?? '').toString(),
 			nombre: (map['nombre'] ?? '').toString(),
 			destino: map['destino']?.toString(),
 			descripcion: map['descripcion']?.toString(),
 			creadorId: map['creador_id']?.toString(),
-			miembrosCount: (map['miembros_count'] as num?)?.toInt(),
-			creadoEn: _parseFecha(map['creado_en']),
+			miembrosCount:
+				miembrosDesdeJoin ?? (map['miembros_count'] as num?)?.toInt(),
+			creadoEn: _parseFecha(map['creado_el'] ?? map['creado_en']),
 			actualizadoEn: _parseFecha(map['actualizado_en']),
 		);
 	}
 
 	Map<String, dynamic> toMap() {
 		return <String, dynamic>{
-			'id': id,
 			'nombre': nombre,
 			'destino': destino,
 			'descripcion': descripcion,
-			'creador_id': creadorId,
-			'miembros_count': miembrosCount,
-			'creado_en': creadoEn?.toIso8601String(),
-			'actualizado_en': actualizadoEn?.toIso8601String(),
 		};
 	}
 

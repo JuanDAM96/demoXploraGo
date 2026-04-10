@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
 
 class PantallaLogin extends StatefulWidget {
 	const PantallaLogin({super.key});
@@ -108,43 +108,17 @@ class _PantallaLoginState extends State<PantallaLogin> {
 				child: Column(
 					children: [
 						const SizedBox(height: 10),
-						Stack(
-							alignment: Alignment.center,
-							children: [
-								Opacity(
-									opacity: 0.25,
-									child: Image.asset(
-										'assets/imagenes/fondoInicio.png',
-										height: 290,
-										fit: BoxFit.contain,
-										errorBuilder: (_, __, ___) => const SizedBox(height: 290),
-									),
+						SizedBox(
+							height: 240,
+							child: Center(
+								child: Image.asset(
+									'assets/imagenes/fondoInicio.png',
+									height: 220,
+									fit: BoxFit.contain,
+									errorBuilder: (context, error, stackTrace) =>
+										const Icon(Icons.landscape, size: 96),
 								),
-								Column(
-									children: [
-										Image.asset(
-											'assets/imagenes/splash.png',
-											height: 150,
-											fit: BoxFit.contain,
-											errorBuilder: (_, __, ___) => const Icon(Icons.explore, size: 90),
-										),
-										const SizedBox(height: 10),
-										Image.asset(
-											'assets/imagenes/logotopBar.png',
-											height: 42,
-											fit: BoxFit.contain,
-											errorBuilder: (_, __, ___) {
-												return Text(
-													'XploraGo',
-													style: AppTextStyles.h2(color: const Color(0xFF1E2C56)).copyWith(
-														fontStyle: FontStyle.italic,
-													),
-												);
-											},
-										),
-									],
-								),
-							],
+							),
 						),
 						const SizedBox(height: 12),
 						TextField(

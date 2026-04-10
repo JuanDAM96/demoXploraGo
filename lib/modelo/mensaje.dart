@@ -35,11 +35,11 @@ class Mensaje {
 
 	factory Mensaje.fromMap(Map<String, dynamic> map) {
 		return Mensaje(
-			id: (map['id'] ?? '').toString(),
-			grupoId: (map['grupo_id'] ?? '').toString(),
-			usuarioId: (map['usuario_id'] ?? '').toString(),
-			texto: (map['texto'] ?? '').toString(),
-			creadoEn: _parseFecha(map['creado_en']),
+			id: (map['id_mensaje'] ?? map['id'] ?? '').toString(),
+			grupoId: (map['id_grupo'] ?? map['grupo_id'] ?? '').toString(),
+			usuarioId: (map['id_usuario'] ?? map['usuario_id'] ?? '').toString(),
+			texto: (map['texto'] ?? map['contenido'] ?? '').toString(),
+			creadoEn: _parseFecha(map['creado_en'] ?? map['enviado_en']),
 			leido: map['leido'] == true,
 		);
 	}

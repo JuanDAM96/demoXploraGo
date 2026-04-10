@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 
 class AuthServicio {
   final SupabaseClient _client = SupabaseConexion.cliente;

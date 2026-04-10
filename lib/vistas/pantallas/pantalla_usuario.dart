@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/usuario_control.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
-import 'package:xplorago/vistas/widgets/BottomBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaUsuario extends StatefulWidget {
   const PantallaUsuario({super.key});
@@ -83,16 +83,6 @@ class _PantallaUsuarioState extends State<PantallaUsuario> {
         foregroundColor: AppColors.blanco,
         menuBackgroundColor: AppColors.blanco,
         menuTextColor: AppColors.verdeOscuro,
-        leading: Container(
-          width: 58,
-          height: 58,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/imagenes/logotopBar.png',
-            fit: BoxFit.cover,
-          ),
-        ),
         menuItems: [
           TopBarMenuItem(
             label: 'Inicio',
@@ -124,9 +114,22 @@ class _PantallaUsuarioState extends State<PantallaUsuario> {
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: BottomBar(
+            itemActivo: BottomBarItem.perfil,
+            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
+            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
+            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
+            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+          ),
+        ),
+      ),
       body: AnimatedBuilder(
         animation: _usuarioControl,
-        builder: (_, __) {
+        builder: (context, child) {
           return Stack(
             children: [
               Align(
@@ -218,15 +221,6 @@ class _PantallaUsuarioState extends State<PantallaUsuario> {
                         ],
                       ),
                       const SizedBox(height: 92),
-                      BottomBar(
-                        itemActivo: BottomBarItem.grupo,
-                        onAtras: () =>
-                            Navigator.pushNamed(context, RutasApp.home),
-                        onGrupo: () =>
-                            Navigator.pushNamed(context, RutasApp.grupo),
-                        onGastos: () =>
-                            Navigator.pushNamed(context, RutasApp.gastos),
-                      ),
                     ],
                   ),
                 ),

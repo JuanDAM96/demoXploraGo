@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 
-enum BottomBarItem { atras, grupo, gastos, chat }
+enum BottomBarItem { atras, grupo, gastos, perfil, chat }
 
 class BottomBar extends StatelessWidget {
   const BottomBar({
@@ -10,6 +10,7 @@ class BottomBar extends StatelessWidget {
     this.onAtras,
     this.onGrupo,
     this.onGastos,
+    this.onPerfil,
     this.onChat,
     this.mostrarChat = false,
   });
@@ -18,6 +19,7 @@ class BottomBar extends StatelessWidget {
   final VoidCallback? onAtras;
   final VoidCallback? onGrupo;
   final VoidCallback? onGastos;
+  final VoidCallback? onPerfil;
   final VoidCallback? onChat;
   final bool mostrarChat;
 
@@ -47,6 +49,11 @@ class BottomBar extends StatelessWidget {
             activo: itemActivo == BottomBarItem.gastos,
             onTap: onGastos,
           ),
+          _BottomBarButton(
+            iconData: Icons.person_rounded,
+            activo: itemActivo == BottomBarItem.perfil,
+            onTap: onPerfil,
+          ),
           if (mostrarChat)
             _BottomBarButton(
               assetPath: 'assets/iconos/iconoChat.png',
@@ -61,12 +68,14 @@ class BottomBar extends StatelessWidget {
 
 class _BottomBarButton extends StatelessWidget {
   const _BottomBarButton({
-    required this.assetPath,
+    this.assetPath,
+    this.iconData,
     required this.activo,
     this.onTap,
-  });
+  }) : assert(assetPath != null || iconData != null);
 
-  final String assetPath;
+  final String? assetPath;
+  final IconData? iconData;
   final bool activo;
   final VoidCallback? onTap;
 
@@ -88,7 +97,9 @@ class _BottomBarButton extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Image.asset(assetPath, fit: BoxFit.contain),
+          child: assetPath != null
+              ? Image.asset(assetPath!, fit: BoxFit.contain)
+              : Icon(iconData, color: AppColors.verdeOscuro, size: 26),
         ),
       ),
     );

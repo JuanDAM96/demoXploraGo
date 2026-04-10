@@ -47,14 +47,14 @@ class Actividad {
 
 	factory Actividad.fromMap(Map<String, dynamic> map) {
 		return Actividad(
-			id: (map['id'] ?? '').toString(),
-			grupoId: (map['grupo_id'] ?? '').toString(),
+			id: (map['id_actividad'] ?? map['id'] ?? '').toString(),
+			grupoId: (map['id_grupo'] ?? map['grupo_id'] ?? '').toString(),
 			titulo: (map['titulo'] ?? '').toString(),
 			descripcion: map['descripcion']?.toString(),
 			lugar: map['lugar']?.toString(),
 			fechaActividad: _parseFecha(map['fecha_actividad']),
 			costo: (map['costo'] as num?)?.toDouble(),
-			creadoPor: map['creado_por']?.toString(),
+			creadoPor: (map['creado_por'] ?? map['id_usuario'])?.toString(),
 			completada: map['completada'] == true,
 		);
 	}

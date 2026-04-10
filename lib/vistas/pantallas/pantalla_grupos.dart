@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/grupo_control.dart';
 import 'package:xplorago/modelo/usuario.dart';
-import 'package:xplorago/nucleo/conexion/Supabase_conexion.dart';
-import 'package:xplorago/nucleo/navegacion/RutasApp.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/TopBar.dart';
-import 'package:xplorago/vistas/widgets/BottomBar.dart';
+import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaGrupos extends StatefulWidget {
   const PantallaGrupos({super.key});
@@ -23,6 +23,9 @@ class _PantallaGruposState extends State<PantallaGrupos> {
 
   List<_MiembroVista> _miembros = <_MiembroVista>[];
   bool _cargandoMiembros = false;
+  String? _rolUsuarioActual;
+
+  bool get _esAdmin => _rolUsuarioActual == 'admin';
 
   @override
   void initState() {
@@ -46,10 +49,38 @@ class _PantallaGruposState extends State<PantallaGrupos> {
     }
 
     if (_grupoControl.grupoActual != null) {
+      final String grupoId = _grupoControl.grupoActual!.id;
+      await _actualizarRolUsuarioActual(grupoId: grupoId, usuarioId: usuarioId);
       await _cargarMiembrosDelGrupo(
-        grupoId: _grupoControl.grupoActual!.id,
+        grupoId: grupoId,
         usuarioIdActual: usuarioId,
       );
+    } else {
+      if (!mounted) return;
+      setState(() {
+        _rolUsuarioActual = null;
+      });
+    }
+  }
+
+  Future<void> _actualizarRolUsuarioActual({
+    required String grupoId,
+    required String usuarioId,
+  }) async {
+    try {
+      final String? rol = await _grupoControl.obtenerRolMiembro(
+        grupoId,
+        usuarioId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _rolUsuarioActual = rol;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _rolUsuarioActual = null;
+      });
     }
   }
 
@@ -110,10 +141,11 @@ class _PantallaGruposState extends State<PantallaGrupos> {
         _miembros = miembros;
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _cargandoMiembros = false;
-      });
+      if (mounted) {
+        setState(() {
+          _cargandoMiembros = false;
+        });
+      }
     }
   }
 
@@ -173,6 +205,104 @@ class _PantallaGruposState extends State<PantallaGrupos> {
     }
   }
 
+  Future<void> _confirmarEliminarGrupo() async {
+    if (!_esAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solo el admin puede eliminar el grupo')),
+      );
+      return;
+    }
+
+    final String? grupoId = _grupoControl.grupoActual?.id;
+    if (grupoId == null) return;
+
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar grupo'),
+          content: const Text(
+            '¿Seguro que quieres eliminar este grupo? Esta acción no se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.coral,
+              ),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await _grupoControl.eliminar(grupoId);
+      await _cargarGrupo();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Grupo eliminado correctamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo eliminar el grupo: $e')),
+      );
+    }
+  }
+
+  Future<void> _confirmarSalirDelGrupo() async {
+    final String? grupoId = _grupoControl.grupoActual?.id;
+    final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
+    if (grupoId == null || usuarioId == null) return;
+
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Salir del grupo'),
+          content: const Text('¿Seguro que quieres salir de este grupo?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.verdeOscuro,
+              ),
+              child: const Text('Salir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await _grupoControl.eliminarMiembro(grupoId, usuarioId);
+      await _cargarGrupo();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saliste del grupo correctamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo salir del grupo: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,16 +314,6 @@ class _PantallaGruposState extends State<PantallaGrupos> {
         foregroundColor: AppColors.blanco,
         menuBackgroundColor: AppColors.blanco,
         menuTextColor: AppColors.verdeOscuro,
-        leading: Container(
-          width: 58,
-          height: 58,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/imagenes/logotopBar.png',
-            fit: BoxFit.cover,
-          ),
-        ),
         menuItems: [
           TopBarMenuItem(
             label: 'Inicio',
@@ -225,9 +345,22 @@ class _PantallaGruposState extends State<PantallaGrupos> {
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: BottomBar(
+            itemActivo: BottomBarItem.grupo,
+            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
+            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
+            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
+            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+          ),
+        ),
+      ),
       body: AnimatedBuilder(
         animation: _grupoControl,
-        builder: (_, __) {
+        builder: (context, child) {
           // Si no hay grupo actual, mostrar pantalla vacía
           if (_grupoControl.grupoActual == null) {
             return Stack(
@@ -261,7 +394,7 @@ class _PantallaGruposState extends State<PantallaGrupos> {
           final String nombreGrupo =
               _grupoControl.grupoActual?.nombre.isNotEmpty == true
               ? _grupoControl.grupoActual!.nombre
-              : 'Viaje Express';
+        : 'Grupo sin nombre';
 
           return Stack(
             children: [
@@ -415,16 +548,57 @@ class _PantallaGruposState extends State<PantallaGrupos> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      BottomBar(
-                        itemActivo: BottomBarItem.grupo,
-                        onAtras: () =>
-                            Navigator.pushNamed(context, RutasApp.home),
-                        onGrupo: () =>
-                            Navigator.pushNamed(context, RutasApp.grupo),
-                        onGastos: () =>
-                            Navigator.pushNamed(context, RutasApp.gastos),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 38,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.verdeOscuro,
+                                  side: const BorderSide(
+                                    color: AppColors.verdeOscuro,
+                                    width: 2,
+                                  ),
+                                ),
+                                onPressed: _confirmarSalirDelGrupo,
+                                child: Text(
+                                  'Salir del grupo',
+                                  style: AppTextStyles.boton(
+                                    color: AppColors.verdeOscuro,
+                                  ).copyWith(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_esAdmin) ...[
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: SizedBox(
+                                height: 38,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.coral,
+                                    side: const BorderSide(
+                                      color: AppColors.coral,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  onPressed: _confirmarEliminarGrupo,
+                                  child: Text(
+                                    'Eliminar grupo',
+                                    style: AppTextStyles.boton(
+                                      color: AppColors.coral,
+                                    ).copyWith(fontSize: 14),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

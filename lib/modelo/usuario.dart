@@ -67,11 +67,11 @@ class Usuario {
 
 	factory Usuario.fromMap(Map<String, dynamic> map) {
 		return Usuario(
-			id: (map['id'] ?? '').toString(),
+			id: (map['id'] ?? map['id_usuario'] ?? '').toString(),
 			nombre: map['nombre']?.toString(),
 			apellidos: map['apellidos']?.toString(),
 			nombreUsuario: map['nombre_usuario']?.toString(),
-			correo: map['correo']?.toString(),
+			correo: (map['correo'] ?? map['email'])?.toString(),
 			telefono: map['telefono']?.toString(),
 			direccion: map['direccion']?.toString(),
 			numero: map['numero']?.toString(),
@@ -79,7 +79,7 @@ class Usuario {
 			provincia: map['provincia']?.toString(),
 			codigoPostal: map['codigo_postal']?.toString(),
 			fechaNacimiento: map['fecha_nacimiento']?.toString(),
-			creadoEn: _parseFecha(map['creado_en']),
+			creadoEn: _parseFecha(map['creado_en'] ?? map['creado_el']),
 			actualizadoEn: _parseFecha(map['actualizado_en']),
 		);
 	}

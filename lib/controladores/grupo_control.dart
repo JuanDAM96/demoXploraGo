@@ -169,6 +169,17 @@ class GrupoControl extends ChangeNotifier {
     }
   }
 
+  // Obtener rol del usuario en el grupo
+  Future<String?> obtenerRolMiembro(String grupoId, String usuarioId) async {
+    try {
+      return await _servicio.obtenerRolMiembro(grupoId, usuarioId);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   // Limpiar estado
   void limpiar() {
     _grupos = <Grupo>[];
