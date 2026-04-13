@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
+import 'package:xplorago/vistas/widgets/top_bar.dart';
 
 VoidCallback irA(BuildContext context, String ruta) {
   return () => Navigator.pushNamed(context, ruta);

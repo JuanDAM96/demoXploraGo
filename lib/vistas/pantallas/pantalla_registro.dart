@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:xplorago/nucleo/navegacion/navegacion_app.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 
 class PantallaRegistro extends StatefulWidget {
 	const PantallaRegistro({super.key});

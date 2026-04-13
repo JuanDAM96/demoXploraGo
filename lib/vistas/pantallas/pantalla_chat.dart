@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:xplorago/controladores/chat_control.dart';
+import 'package:xplorago/controladores/grupo_control.dart';
+import 'package:xplorago/modelo/mensaje.dart';
+import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/navegacion_app.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaChat extends StatefulWidget {
@@ -14,27 +18,120 @@ class PantallaChat extends StatefulWidget {
 
 class _PantallaChatState extends State<PantallaChat> {
   final TextEditingController _mensajeController = TextEditingController();
+  final ChatControl _chatControl = ChatControl();
+  final GrupoControl _grupoControl = GrupoControl();
 
-  final List<_MensajeUi> _mensajes = <_MensajeUi>[];
+  String? _grupoIdActual;
+  String? _usuarioIdActual;
+  bool _inicializando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _inicializarChat();
+  }
 
   @override
   void dispose() {
     _mensajeController.dispose();
+    _chatControl.dispose();
+    _grupoControl.dispose();
     super.dispose();
   }
 
-  void _enviarMensaje() {
+  void _mostrarMensaje(String texto) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+  }
+
+  Future<void> _inicializarChat() async {
+    final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
+    _usuarioIdActual = usuarioId;
+
+    if (usuarioId == null) {
+      if (mounted) {
+        setState(() {
+          _inicializando = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      await _grupoControl.cargarGrupos(usuarioId);
+      if (_grupoControl.grupoActual == null && _grupoControl.grupos.isNotEmpty) {
+        await _grupoControl.seleccionarGrupo(_grupoControl.grupos.first.id);
+      }
+
+      _grupoIdActual = _grupoControl.grupoActual?.id;
+      if (_grupoIdActual != null) {
+        await _chatControl.cargarMensajesPorGrupo(_grupoIdActual!);
+      }
+    } catch (e) {
+      _mostrarMensaje('No se pudo cargar el chat: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _inicializando = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _recargarMensajes() async {
+    final String? grupoId = _grupoIdActual;
+    if (grupoId == null) return;
+
+    try {
+      await _chatControl.cargarMensajesPorGrupo(grupoId);
+      setState(() {});
+    } catch (e) {
+      _mostrarMensaje('No se pudo actualizar el chat: $e');
+    }
+  }
+
+  Future<void> _enviarMensaje() async {
     final String texto = _mensajeController.text.trim();
     if (texto.isEmpty) return;
 
-    setState(() {
-      _mensajes.add(_MensajeUi(autor: 'Tu', texto: texto, esMio: true));
-      _mensajeController.clear();
-    });
+    final String? grupoId = _grupoIdActual;
+    final String? usuarioId = _usuarioIdActual;
+    if (grupoId == null || usuarioId == null) {
+      _mostrarMensaje('Necesitas un grupo activo para enviar mensajes.');
+      return;
+    }
+
+    try {
+      await _chatControl.enviarMensaje(
+        grupoId: grupoId,
+        usuarioId: usuarioId,
+        texto: texto,
+      );
+      if (mounted) {
+        _mensajeController.clear();
+        setState(() {});
+      }
+    } catch (e) {
+      _mostrarMensaje('No se pudo enviar el mensaje: $e');
+    }
+  }
+
+  List<_MensajeUi> _mensajesUi() {
+    return _chatControl.mensajes.map((Mensaje m) {
+      final bool esMio = m.usuarioId == _usuarioIdActual;
+      return _MensajeUi(
+        autor: esMio ? 'Tú' : 'Miembro',
+        texto: m.texto,
+        esMio: esMio,
+      );
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final List<_MensajeUi> mensajes = _mensajesUi();
+    final bool cargando = _inicializando || _chatControl.cargando;
+
     return Scaffold(
       backgroundColor: AppColors.fondo,
       appBar: topBarPrincipal(context),
@@ -54,6 +151,14 @@ class _PantallaChatState extends State<PantallaChat> {
           padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
           child: Column(
             children: [
+              if (_grupoIdActual == null && !_inicializando)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'No hay grupo activo para cargar el chat.',
+                    style: AppTextStyles.texto(color: AppColors.coralFuerte),
+                  ),
+                ),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -80,9 +185,14 @@ class _PantallaChatState extends State<PantallaChat> {
                           'Chat del grupo',
                           style: AppTextStyles.h2(
                             color: AppColors.blanco,
-                          ).copyWith(fontSize: 40 - 4),
+                          ).copyWith(fontSize: 36),
                         ),
                       ),
+                      if (cargando)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: LinearProgressIndicator(minHeight: 3),
+                        ),
                       Expanded(
                         child: Stack(
                           children: [
@@ -98,18 +208,22 @@ class _PantallaChatState extends State<PantallaChat> {
                                 ),
                               ),
                             ),
-                            ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
-                              itemCount: _mensajes.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                final _MensajeUi mensaje = _mensajes[index];
-                                return _BurbujaMensaje(mensaje: mensaje);
-                              },
+                            RefreshIndicator(
+                              onRefresh: _recargarMensajes,
+                              color: AppColors.coral,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
+                                itemCount: mensajes.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final _MensajeUi mensaje = mensajes[index];
+                                  return _BurbujaMensaje(mensaje: mensaje);
+                                },
+                              ),
                             ),
-                            if (_mensajes.isEmpty)
+                            if (mensajes.isEmpty && !cargando)
                               Center(
                                 child: Text(
-                                  'Aun no hay mensajes.',
+                                  'Aún no hay mensajes.',
                                   style: AppTextStyles.texto(
                                     color: AppColors.grisClaro,
                                   ),
@@ -119,7 +233,6 @@ class _PantallaChatState extends State<PantallaChat> {
                         ),
                       ),
                       Container(
-                        margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         height: 50,
                         decoration: const BoxDecoration(
@@ -148,14 +261,12 @@ class _PantallaChatState extends State<PantallaChat> {
                                   border: InputBorder.none,
                                   isDense: true,
                                 ),
-                                style: AppTextStyles.texto(
-                                  color: AppColors.negro,
-                                ),
+                                style: AppTextStyles.texto(color: AppColors.negro),
                                 onSubmitted: (_) => _enviarMensaje(),
                               ),
                             ),
                             IconButton(
-                              onPressed: _enviarMensaje,
+                              onPressed: cargando ? null : _enviarMensaje,
                               icon: const Icon(
                                 Icons.send_rounded,
                                 color: AppColors.verdeOscuro,
@@ -210,7 +321,7 @@ class _BurbujaMensaje extends StatelessWidget {
                 mensaje.autor,
                 style: AppTextStyles.etiqueta(
                   color: AppColors.negro,
-                ).copyWith(fontSize: 24 - 8),
+                ).copyWith(fontSize: 16),
               ),
             ),
           Container(

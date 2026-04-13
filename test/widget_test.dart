@@ -21,4 +21,22 @@ void main() {
     expect(grupo.miembrosCount, 2);
     expect(grupo.creadoEn, isNotNull);
   });
+
+  test('Grupo.copyWith y toMap mantienen valores esperados', () {
+    final Grupo base = Grupo(
+      id: 'g-1',
+      nombre: 'Aventura',
+      destino: 'Madrid',
+      descripcion: 'Plan de finde',
+    );
+
+    final Grupo actualizado = base.copyWith(nombre: 'Aventura Plus');
+    final Map<String, dynamic> mapa = actualizado.toMap();
+
+    expect(actualizado.id, 'g-1');
+    expect(actualizado.nombre, 'Aventura Plus');
+    expect(mapa['nombre'], 'Aventura Plus');
+    expect(mapa['destino'], 'Madrid');
+    expect(mapa['descripcion'], 'Plan de finde');
+  });
 }

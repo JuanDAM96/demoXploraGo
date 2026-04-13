@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/usuario_control.dart';
 import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
+import 'package:xplorago/nucleo/navegacion/navegacion_app.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaUsuario extends StatefulWidget {
