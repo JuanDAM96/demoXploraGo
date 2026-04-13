@@ -4,7 +4,7 @@ import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 
 class PantallaRegistro extends StatefulWidget {
 	const PantallaRegistro({super.key});
@@ -33,6 +33,13 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
 	bool _cargando = false;
 
+	void _mostrarMensaje(String mensaje) {
+		if (!mounted) return;
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(content: Text(mensaje)),
+		);
+	}
+
 	@override
 	void dispose() {
 		_nombreController.dispose();
@@ -57,16 +64,12 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 		final String repiteContrasena = _repiteContrasenaController.text.trim();
 
 		if (correo.isEmpty || contrasena.isEmpty) {
-			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Correo y contrasena son obligatorios.')),
-			);
+			_mostrarMensaje('Correo y contrasena son obligatorios.');
 			return;
 		}
 
 		if (contrasena != repiteContrasena) {
-			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Las contrasenas no coinciden.')),
-			);
+			_mostrarMensaje('Las contrasenas no coinciden.');
 			return;
 		}
 
@@ -97,20 +100,13 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 					fechaNacimiento: _fechaNacimientoController.text.trim(),
 				);
 			} catch (_) {
-				if (mounted) {
-					ScaffoldMessenger.of(context).showSnackBar(
-						const SnackBar(content: Text('Cuenta creada. Perfil no guardado aun.')),
-					);
-				}
+				_mostrarMensaje('Cuenta creada. Perfil no guardado aun.');
 			}
 
 			if (!mounted) return;
 			Navigator.pushReplacementNamed(context, RutasApp.home);
 		} catch (e) {
-			if (!mounted) return;
-			ScaffoldMessenger.of(context).showSnackBar(
-				SnackBar(content: Text('Error al registrar: $e')),
-			);
+			_mostrarMensaje('Error al registrar: $e');
 		} finally {
 			if (mounted) {
 				setState(() {
@@ -124,14 +120,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			backgroundColor: AppColors.fondo,
-			appBar: TopBar(
-				title: 'XploraGo',
-				menuLabel: '',
-				menuItems: [
-					TopBarMenuItem(label: 'Inicio', onTap: () => Navigator.pushNamed(context, RutasApp.inicio)),
-					TopBarMenuItem(label: 'Login', onTap: () => Navigator.pushNamed(context, RutasApp.login)),
-				],
-			),
+			appBar: topBarAuth(context, menuItems: menuRegistro(context)),
 			body: Stack(
 				children: [
 					Center(

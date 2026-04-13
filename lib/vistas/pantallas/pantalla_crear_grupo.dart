@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/grupo_control.dart';
 import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
-import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
+import 'package:xplorago/nucleo/temas/texto_util.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaCrearGrupo extends StatefulWidget {
@@ -25,6 +25,13 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   final TextEditingController _miembroController = TextEditingController();
 
   final List<String> _miembros = <String>[];
+
+  void _mostrarMensaje(String mensaje, {int segundos = 3}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje), duration: Duration(seconds: segundos)),
+    );
+  }
 
   @override
   void initState() {
@@ -89,22 +96,15 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Future<void> _crearGrupo() async {
     final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
     if (usuarioId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Error: Usuario no autenticado. Por favor inicia sesión.',
-          ),
-          duration: Duration(seconds: 3),
-        ),
+      _mostrarMensaje(
+        'Error: Usuario no autenticado. Por favor inicia sesión.',
       );
       return;
     }
 
     final String nombre = _nombreController.text.trim();
     if (nombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Introduce el nombre del grupo')),
-      );
+      _mostrarMensaje('Introduce el nombre del grupo');
       return;
     }
 
@@ -124,28 +124,15 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Grupo creado correctamente')),
-      );
+      _mostrarMensaje('Grupo creado correctamente');
       Navigator.pushNamedAndRemoveUntil(
         context,
         RutasApp.home,
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo crear el grupo: $e')));
+      _mostrarMensaje('No se pudo crear el grupo: $e');
     }
-  }
-
-  String _iniciales(String nombre) {
-    final List<String> partes = nombre.trim().split(' ');
-    if (partes.isEmpty || partes.first.isEmpty) return 'U';
-    if (partes.length == 1) return partes.first.substring(0, 1).toUpperCase();
-    return '${partes[0].substring(0, 1)}${partes[1].substring(0, 1)}'
-        .toUpperCase();
   }
 
   @override
@@ -156,54 +143,15 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
 
     return Scaffold(
       backgroundColor: AppColors.fondo,
-      appBar: TopBar(
-        title: 'XploraGo',
-        menuLabel: 'menu',
-        backgroundColor: AppColors.verdeOscuro,
-        foregroundColor: AppColors.blanco,
-        menuBackgroundColor: AppColors.blanco,
-        menuTextColor: AppColors.verdeOscuro,
-        menuItems: [
-          TopBarMenuItem(
-            label: 'Inicio',
-            onTap: () => Navigator.pushNamed(context, RutasApp.home),
-          ),
-          TopBarMenuItem(
-            label: 'Grupo',
-            onTap: () => Navigator.pushNamed(context, RutasApp.grupo),
-          ),
-          TopBarMenuItem(
-            label: 'Usuario',
-            onTap: () => Navigator.pushNamed(context, RutasApp.usuario),
-          ),
-          TopBarMenuItem(
-            label: 'Gastos',
-            onTap: () => Navigator.pushNamed(context, RutasApp.gastos),
-          ),
-          TopBarMenuItem(
-            label: 'Salir',
-            onTap: () async {
-              await AuthServicio().cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                RutasApp.inicio,
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: topBarPrincipal(context),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: BottomBar(
+          child: bottomBarPrincipal(
+            context,
             itemActivo: BottomBarItem.grupo,
-            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
-            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
-            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+            rutaAtras: RutasApp.home,
           ),
         ),
       ),
@@ -351,7 +299,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
                       ),
                       child: Center(
                         child: Text(
-                          _iniciales(miembroPrincipal),
+                          obtenerIniciales(miembroPrincipal),
                           style: AppTextStyles.boton(
                             color: AppColors.verdeOscuro,
                           ),

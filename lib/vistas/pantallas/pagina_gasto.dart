@@ -5,11 +5,11 @@ import 'package:xplorago/modelo/gasto.dart';
 import 'package:xplorago/modelo/usuario.dart';
 import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
-import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
+import 'package:xplorago/nucleo/temas/texto_util.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PaginaGasto extends StatefulWidget {
@@ -28,13 +28,17 @@ class _PaginaGastoState extends State<PaginaGasto> {
   List<String> _miembroIds = <String>[];
   bool _cargandoUsuarios = false;
 
+  void _mostrarMensaje(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensaje)));
+  }
+
   Future<void> _mostrarDialogoNuevoGasto() async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final String? grupoId = _grupoControl.grupoActual?.id;
     if (grupoId == null || _miembroIds.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Necesitas un grupo con miembros para crear gastos.')),
-      );
+      _mostrarMensaje('Necesitas un grupo con miembros para crear gastos.');
       return;
     }
 
@@ -54,7 +58,7 @@ class _PaginaGastoState extends State<PaginaGasto> {
         return StatefulBuilder(
           builder:
               (
-                BuildContext dialogInnerContext,
+                BuildContext _,
                 void Function(void Function()) setDialogState,
               ) {
             return AlertDialog(
@@ -191,17 +195,11 @@ class _PaginaGastoState extends State<PaginaGasto> {
                     );
 
                     if (descripcion.isEmpty || monto == null || monto <= 0) {
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Introduce descripción y un monto válido.')),
-                      );
+                      _mostrarMensaje('Introduce descripción y un monto válido.');
                       return;
                     }
                     if (participantes.isEmpty) {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Selecciona al menos un participante.'),
-                        ),
-                      );
+                      _mostrarMensaje('Selecciona al menos un participante.');
                       return;
                     }
 
@@ -216,12 +214,8 @@ class _PaginaGastoState extends State<PaginaGasto> {
                           raw.replaceAll(',', '.'),
                         );
                         if (valor == null || valor <= 0) {
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Importe inválido para ${_nombreUsuario(id)}.',
-                              ),
-                            ),
+                          _mostrarMensaje(
+                            'Importe inválido para ${_nombreUsuario(id)}.',
                           );
                           return;
                         }
@@ -230,12 +224,8 @@ class _PaginaGastoState extends State<PaginaGasto> {
                       }
 
                       if ((suma - monto).abs() > 0.01) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'La suma del reparto (${_euros(suma)}) debe ser igual al monto (${_euros(monto)}).',
-                            ),
-                          ),
+                        _mostrarMensaje(
+                          'La suma del reparto (${_euros(suma)}) debe ser igual al monto (${_euros(monto)}).',
                         );
                         return;
                       }
@@ -253,10 +243,7 @@ class _PaginaGastoState extends State<PaginaGasto> {
                       if (!dialogContext.mounted) return;
                       Navigator.pop(dialogContext, true);
                     } catch (e) {
-                      if (!mounted) return;
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('No se pudo crear el gasto: $e')),
-                      );
+                      _mostrarMensaje('No se pudo crear el gasto: $e');
                     }
                   },
                   child: const Text('Guardar'),
@@ -272,9 +259,7 @@ class _PaginaGastoState extends State<PaginaGasto> {
     // de los TextField/EditableText al cerrarse el diálogo en ciertos devices.
 
     if (creado == true && mounted) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Gasto añadido correctamente.')),
-      );
+      _mostrarMensaje('Gasto añadido correctamente.');
     }
   }
 
@@ -362,14 +347,6 @@ class _PaginaGastoState extends State<PaginaGasto> {
       return usuario.nombre!.trim();
     }
     return 'Usuario';
-  }
-
-  String _iniciales(String nombre) {
-    final List<String> partes = nombre.trim().split(' ');
-    if (partes.isEmpty || partes.first.isEmpty) return 'U';
-    if (partes.length == 1) return partes.first.substring(0, 1).toUpperCase();
-    return '${partes[0].substring(0, 1)}${partes[1].substring(0, 1)}'
-        .toUpperCase();
   }
 
   String _euros(double valor) {
@@ -472,54 +449,15 @@ class _PaginaGastoState extends State<PaginaGasto> {
 
     return Scaffold(
       backgroundColor: AppColors.fondo,
-      appBar: TopBar(
-        title: 'XploraGo',
-        menuLabel: 'menu',
-        backgroundColor: AppColors.verdeOscuro,
-        foregroundColor: AppColors.blanco,
-        menuBackgroundColor: AppColors.blanco,
-        menuTextColor: AppColors.verdeOscuro,
-        menuItems: [
-          TopBarMenuItem(
-            label: 'Inicio',
-            onTap: () => Navigator.pushNamed(context, RutasApp.home),
-          ),
-          TopBarMenuItem(
-            label: 'Grupo',
-            onTap: () => Navigator.pushNamed(context, RutasApp.grupo),
-          ),
-          TopBarMenuItem(
-            label: 'Usuario',
-            onTap: () => Navigator.pushNamed(context, RutasApp.usuario),
-          ),
-          TopBarMenuItem(
-            label: 'Gastos',
-            onTap: () => Navigator.pushNamed(context, RutasApp.gastos),
-          ),
-          TopBarMenuItem(
-            label: 'Salir',
-            onTap: () async {
-              await AuthServicio().cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                RutasApp.inicio,
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: topBarPrincipal(context),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: BottomBar(
+          child: bottomBarPrincipal(
+            context,
             itemActivo: BottomBarItem.gastos,
-            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
-            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
-            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+            rutaAtras: RutasApp.home,
           ),
         ),
       ),
@@ -588,7 +526,7 @@ class _PaginaGastoState extends State<PaginaGasto> {
                                   ),
                                   child: Center(
                                     child: Text(
-                                      _iniciales(nombre),
+                                      obtenerIniciales(nombre),
                                       style: AppTextStyles.h2(
                                         color: AppColors.verdeOscuro,
                                       ),

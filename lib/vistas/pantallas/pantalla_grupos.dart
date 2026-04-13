@@ -3,11 +3,11 @@ import 'package:xplorago/controladores/grupo_control.dart';
 import 'package:xplorago/modelo/usuario.dart';
 import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
-import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/servicios/usuario_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
+import 'package:xplorago/nucleo/temas/texto_util.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 import 'package:xplorago/vistas/widgets/bottom_bar.dart';
 
 class PantallaGrupos extends StatefulWidget {
@@ -26,6 +26,43 @@ class _PantallaGruposState extends State<PantallaGrupos> {
   String? _rolUsuarioActual;
 
   bool get _esAdmin => _rolUsuarioActual == 'admin';
+
+  void _mostrarMensaje(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensaje)));
+  }
+
+  Future<bool> _confirmarAccion({
+    required String titulo,
+    required String contenido,
+    required String textoConfirmar,
+    required Color colorConfirmar,
+  }) async {
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(contenido),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(backgroundColor: colorConfirmar),
+              child: Text(textoConfirmar),
+            ),
+          ],
+        );
+      },
+    );
+
+    return confirmar == true;
+  }
 
   @override
   void initState() {
@@ -192,69 +229,36 @@ class _PantallaGruposState extends State<PantallaGrupos> {
           usuarioIdActual: usuarioIdActual,
         );
       }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Miembro agregado correctamente')),
-      );
+      _mostrarMensaje('Miembro agregado correctamente');
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo agregar: $e')));
+      _mostrarMensaje('No se pudo agregar: $e');
     }
   }
 
   Future<void> _confirmarEliminarGrupo() async {
     if (!_esAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solo el admin puede eliminar el grupo')),
-      );
+      _mostrarMensaje('Solo el admin puede eliminar el grupo');
       return;
     }
 
     final String? grupoId = _grupoControl.grupoActual?.id;
     if (grupoId == null) return;
 
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Eliminar grupo'),
-          content: const Text(
-            '¿Seguro que quieres eliminar este grupo? Esta acción no se puede deshacer.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.coral,
-              ),
-              child: const Text('Eliminar'),
-            ),
-          ],
-        );
-      },
+    final bool confirmar = await _confirmarAccion(
+      titulo: 'Eliminar grupo',
+      contenido:
+          '¿Seguro que quieres eliminar este grupo? Esta acción no se puede deshacer.',
+      textoConfirmar: 'Eliminar',
+      colorConfirmar: AppColors.coral,
     );
-
-    if (confirmar != true) return;
+    if (!confirmar) return;
 
     try {
       await _grupoControl.eliminar(grupoId);
       await _cargarGrupo();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Grupo eliminado correctamente')),
-      );
+      _mostrarMensaje('Grupo eliminado correctamente');
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo eliminar el grupo: $e')),
-      );
+      _mostrarMensaje('No se pudo eliminar el grupo: $e');
     }
   }
 
@@ -263,43 +267,20 @@ class _PantallaGruposState extends State<PantallaGrupos> {
     final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
     if (grupoId == null || usuarioId == null) return;
 
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Salir del grupo'),
-          content: const Text('¿Seguro que quieres salir de este grupo?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.verdeOscuro,
-              ),
-              child: const Text('Salir'),
-            ),
-          ],
-        );
-      },
+    final bool confirmar = await _confirmarAccion(
+      titulo: 'Salir del grupo',
+      contenido: '¿Seguro que quieres salir de este grupo?',
+      textoConfirmar: 'Salir',
+      colorConfirmar: AppColors.verdeOscuro,
     );
-
-    if (confirmar != true) return;
+    if (!confirmar) return;
 
     try {
       await _grupoControl.eliminarMiembro(grupoId, usuarioId);
       await _cargarGrupo();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saliste del grupo correctamente')),
-      );
+      _mostrarMensaje('Saliste del grupo correctamente');
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo salir del grupo: $e')),
-      );
+      _mostrarMensaje('No se pudo salir del grupo: $e');
     }
   }
 
@@ -307,54 +288,15 @@ class _PantallaGruposState extends State<PantallaGrupos> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
-      appBar: TopBar(
-        title: 'XploraGo',
-        menuLabel: 'menu',
-        backgroundColor: AppColors.verdeOscuro,
-        foregroundColor: AppColors.blanco,
-        menuBackgroundColor: AppColors.blanco,
-        menuTextColor: AppColors.verdeOscuro,
-        menuItems: [
-          TopBarMenuItem(
-            label: 'Inicio',
-            onTap: () => Navigator.pushNamed(context, RutasApp.home),
-          ),
-          TopBarMenuItem(
-            label: 'Grupo',
-            onTap: () => Navigator.pushNamed(context, RutasApp.grupo),
-          ),
-          TopBarMenuItem(
-            label: 'Usuario',
-            onTap: () => Navigator.pushNamed(context, RutasApp.usuario),
-          ),
-          TopBarMenuItem(
-            label: 'Gastos',
-            onTap: () => Navigator.pushNamed(context, RutasApp.gastos),
-          ),
-          TopBarMenuItem(
-            label: 'Salir',
-            onTap: () async {
-              await AuthServicio().cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                RutasApp.inicio,
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: topBarPrincipal(context),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: BottomBar(
+          child: bottomBarPrincipal(
+            context,
             itemActivo: BottomBarItem.grupo,
-            onAtras: () => Navigator.pushNamed(context, RutasApp.home),
-            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
-            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+            rutaAtras: RutasApp.home,
           ),
         ),
       ),
@@ -628,14 +570,6 @@ class _MiembroCard extends StatelessWidget {
 
   final _MiembroVista miembro;
 
-  String _iniciales(String nombre) {
-    final List<String> partes = nombre.trim().split(' ');
-    if (partes.isEmpty || partes.first.isEmpty) return 'U';
-    if (partes.length == 1) return partes.first.substring(0, 1).toUpperCase();
-    return '${partes[0].substring(0, 1)}${partes[1].substring(0, 1)}'
-        .toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -664,7 +598,7 @@ class _MiembroCard extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  _iniciales(miembro.nombre),
+                  obtenerIniciales(miembro.nombre),
                   style: AppTextStyles.h2(color: AppColors.blanco),
                 ),
               ),

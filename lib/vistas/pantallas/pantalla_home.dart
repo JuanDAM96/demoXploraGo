@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:xplorago/controladores/grupo_control.dart';
 import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
-import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
-import 'package:xplorago/vistas/widgets/bottom_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 
 class PantallaHome extends StatefulWidget {
   const PantallaHome({super.key});
@@ -69,54 +67,15 @@ class _PantallaHomeState extends State<PantallaHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
-      appBar: TopBar(
-        title: 'XploraGo',
-        menuLabel: 'menu',
-        backgroundColor: AppColors.verdeOscuro,
-        foregroundColor: AppColors.blanco,
-        menuBackgroundColor: AppColors.blanco,
-        menuTextColor: AppColors.verdeOscuro,
-        menuItems: [
-          TopBarMenuItem(
-            label: 'Inicio',
-            onTap: () => Navigator.pushNamed(context, RutasApp.home),
-          ),
-          TopBarMenuItem(
-            label: 'Grupo',
-            onTap: () => Navigator.pushNamed(context, RutasApp.grupo),
-          ),
-          TopBarMenuItem(
-            label: 'Usuario',
-            onTap: () => Navigator.pushNamed(context, RutasApp.usuario),
-          ),
-          TopBarMenuItem(
-            label: 'Gastos',
-            onTap: () => Navigator.pushNamed(context, RutasApp.gastos),
-          ),
-          TopBarMenuItem(
-            label: 'Salir',
-            onTap: () async {
-              await AuthServicio().cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                RutasApp.inicio,
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: topBarPrincipal(context),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          child: BottomBar(
+          child: bottomBarPrincipal(
+            context,
             itemActivo: null,
-            onAtras: () => Navigator.pushNamed(context, RutasApp.inicio),
-            onGrupo: () => Navigator.pushNamed(context, RutasApp.grupo),
-            onGastos: () => Navigator.pushNamed(context, RutasApp.gastos),
-            onPerfil: () => Navigator.pushNamed(context, RutasApp.usuario),
+            rutaAtras: RutasApp.inicio,
           ),
         ),
       ),

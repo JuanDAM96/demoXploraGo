@@ -3,6 +3,18 @@ import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MensajeServicio {
+  dynamic get _tablaMensajes => SupabaseConexion.cliente.from('mensajes');
+
+  static const Map<String, dynamic> _leidoTrue = <String, dynamic>{
+    'leido': true,
+  };
+
+  List<Mensaje> _mapearMensajes(List<dynamic> respuesta) {
+    return respuesta
+        .map((mapa) => Mensaje.fromMap(mapa as Map<String, dynamic>))
+        .toList();
+  }
+
   bool _esErrorEsquema(dynamic e) {
     if (e is! PostgrestException) return false;
     final String? code = e.code;
@@ -30,16 +42,14 @@ class MensajeServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('id_grupo', grupoId)
               .order('enviado_en', ascending: true);
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('grupo_id', grupoId)
               .order('creado_en', ascending: true);
@@ -47,9 +57,7 @@ class MensajeServicio {
         },
       );
 
-    return respuesta
-          .map((mapa) => Mensaje.fromMap(mapa as Map<String, dynamic>))
-          .toList();
+      return _mapearMensajes(respuesta);
     } catch (e) {
       throw Exception('Error al cargar mensajes: $e');
     }
@@ -61,16 +69,14 @@ class MensajeServicio {
       final Map<String, dynamic> respuesta =
           await _conFallbackEsquema<Map<String, dynamic>>(
             primario: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('mensajes')
+              final dynamic r = await _tablaMensajes
                   .select()
                   .eq('id_mensaje', mensajeId)
                   .single();
               return r as Map<String, dynamic>;
             },
             fallback: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('mensajes')
+              final dynamic r = await _tablaMensajes
                   .select()
                   .eq('id', mensajeId)
                   .single();
@@ -94,8 +100,7 @@ class MensajeServicio {
       final Map<String, dynamic> respuesta =
           await _conFallbackEsquema<Map<String, dynamic>>(
             primario: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('mensajes')
+              final dynamic r = await _tablaMensajes
                   .insert(<String, dynamic>{
                     'id_grupo': grupoId,
                     'id_usuario': usuarioId,
@@ -108,8 +113,7 @@ class MensajeServicio {
               return r as Map<String, dynamic>;
             },
             fallback: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('mensajes')
+              final dynamic r = await _tablaMensajes
                   .insert(<String, dynamic>{
                     'grupo_id': grupoId,
                     'usuario_id': usuarioId,
@@ -134,16 +138,10 @@ class MensajeServicio {
     try {
       await _conFallbackEsquema<void>(
         primario: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .update(<String, dynamic>{'leido': true})
-              .eq('id_mensaje', mensajeId);
+          await _tablaMensajes.update(_leidoTrue).eq('id_mensaje', mensajeId);
         },
         fallback: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .update(<String, dynamic>{'leido': true})
-              .eq('id', mensajeId);
+          await _tablaMensajes.update(_leidoTrue).eq('id', mensajeId);
         },
       );
     } catch (e) {
@@ -156,16 +154,14 @@ class MensajeServicio {
     try {
       await _conFallbackEsquema<void>(
         primario: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .update(<String, dynamic>{'leido': true})
+          await _tablaMensajes
+              .update(_leidoTrue)
               .eq('id_grupo', grupoId)
               .neq('id_usuario', usuarioId);
         },
         fallback: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .update(<String, dynamic>{'leido': true})
+          await _tablaMensajes
+              .update(_leidoTrue)
               .eq('grupo_id', grupoId)
               .neq('usuario_id', usuarioId);
         },
@@ -180,16 +176,10 @@ class MensajeServicio {
     try {
       await _conFallbackEsquema<void>(
         primario: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .delete()
-              .eq('id_mensaje', mensajeId);
+          await _tablaMensajes.delete().eq('id_mensaje', mensajeId);
         },
         fallback: () async {
-          await SupabaseConexion.cliente
-              .from('mensajes')
-              .delete()
-              .eq('id', mensajeId);
+          await _tablaMensajes.delete().eq('id', mensajeId);
         },
       );
     } catch (e) {
@@ -202,8 +192,7 @@ class MensajeServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('id_grupo', grupoId)
               .eq('leido', false)
@@ -211,8 +200,7 @@ class MensajeServicio {
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('grupo_id', grupoId)
               .eq('leido', false)
@@ -221,9 +209,7 @@ class MensajeServicio {
         },
       );
 
-    return respuesta
-          .map((mapa) => Mensaje.fromMap(mapa as Map<String, dynamic>))
-          .toList();
+      return _mapearMensajes(respuesta);
     } catch (e) {
       throw Exception('Error al cargar mensajes no leídos: $e');
     }
@@ -234,8 +220,7 @@ class MensajeServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('id_grupo', grupoId)
               .eq('id_usuario', usuarioId)
@@ -243,8 +228,7 @@ class MensajeServicio {
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('mensajes')
+          final dynamic r = await _tablaMensajes
               .select()
               .eq('grupo_id', grupoId)
               .eq('usuario_id', usuarioId)
@@ -253,9 +237,7 @@ class MensajeServicio {
         },
       );
 
-    return respuesta
-          .map((mapa) => Mensaje.fromMap(mapa as Map<String, dynamic>))
-          .toList();
+      return _mapearMensajes(respuesta);
     } catch (e) {
       throw Exception('Error al cargar mensajes: $e');
     }

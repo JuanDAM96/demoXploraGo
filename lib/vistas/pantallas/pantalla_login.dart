@@ -3,7 +3,7 @@ import 'package:xplorago/nucleo/navegacion/rutas_app.dart';
 import 'package:xplorago/nucleo/servicios/auth_servicio.dart';
 import 'package:xplorago/nucleo/temas/colores_tema.dart';
 import 'package:xplorago/nucleo/temas/tipografia_tema.dart';
-import 'package:xplorago/vistas/componentes/top_bar.dart';
+import 'package:xplorago/vistas/componentes/navegacion_app.dart';
 
 class PantallaLogin extends StatefulWidget {
 	const PantallaLogin({super.key});
@@ -19,6 +19,31 @@ class _PantallaLoginState extends State<PantallaLogin> {
 
 	bool _cargando = false;
 
+	void _mostrarMensaje(String mensaje) {
+		if (!mounted) return;
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(content: Text(mensaje)),
+		);
+	}
+
+	InputDecoration _decoracionCampo(String hintText) {
+		return InputDecoration(
+			hintText: hintText,
+			hintStyle: AppTextStyles.texto(color: AppColors.grisClaro),
+			contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+			enabledBorder: OutlineInputBorder(
+				borderRadius: BorderRadius.circular(16),
+				borderSide: const BorderSide(color: AppColors.verdeClaro, width: 1.2),
+			),
+			focusedBorder: OutlineInputBorder(
+				borderRadius: BorderRadius.circular(16),
+				borderSide: const BorderSide(color: AppColors.verdeOscuro, width: 1.5),
+			),
+			filled: true,
+			fillColor: AppColors.blanco,
+		);
+	}
+
 	@override
 	void dispose() {
 		_correoController.dispose();
@@ -31,9 +56,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
 		final String contrasena = _contrasenaController.text.trim();
 
 		if (correo.isEmpty || contrasena.isEmpty) {
-			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Completa correo y contrasena.')),
-			);
+			_mostrarMensaje('Completa correo y contrasena.');
 			return;
 		}
 
@@ -54,10 +77,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
 				(Route<dynamic> route) => false,
 			);
 		} catch (e) {
-			if (!mounted) return;
-			ScaffoldMessenger.of(context).showSnackBar(
-				SnackBar(content: Text('Error al iniciar sesion: $e')),
-			);
+			_mostrarMensaje('Error al iniciar sesion: $e');
 		} finally {
 			if (mounted) {
 				setState(() {
@@ -71,23 +91,15 @@ class _PantallaLoginState extends State<PantallaLogin> {
 		final String correo = _correoController.text.trim();
 
 		if (correo.isEmpty) {
-			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Escribe tu correo para recuperar la contrasena.')),
-			);
+			_mostrarMensaje('Escribe tu correo para recuperar la contrasena.');
 			return;
 		}
 
 		try {
 			await _authServicio.recuperarContrasena(correo: correo);
-			if (!mounted) return;
-			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Te enviamos un correo para restablecer tu contrasena.')),
-			);
+			_mostrarMensaje('Te enviamos un correo para restablecer tu contrasena.');
 		} catch (e) {
-			if (!mounted) return;
-			ScaffoldMessenger.of(context).showSnackBar(
-				SnackBar(content: Text('No se pudo enviar el correo: $e')),
-			);
+			_mostrarMensaje('No se pudo enviar el correo: $e');
 		}
 	}
 
@@ -95,14 +107,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			backgroundColor: AppColors.fondo,
-			appBar: TopBar(
-				title: 'XploraGo',
-				menuLabel: '',
-				menuItems: [
-					TopBarMenuItem(label: 'Inicio', onTap: () => Navigator.pushNamed(context, RutasApp.inicio)),
-					TopBarMenuItem(label: 'Registro', onTap: () => Navigator.pushNamed(context, RutasApp.registro)),
-				],
-			),
+			appBar: topBarAuth(context, menuItems: menuLogin(context)),
 			body: SingleChildScrollView(
 				padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
 				child: Column(
@@ -124,41 +129,13 @@ class _PantallaLoginState extends State<PantallaLogin> {
 						TextField(
 							controller: _correoController,
 							keyboardType: TextInputType.emailAddress,
-							decoration: InputDecoration(
-								hintText: 'Correo',
-								hintStyle: AppTextStyles.texto(color: AppColors.grisClaro),
-								contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-								enabledBorder: OutlineInputBorder(
-									borderRadius: BorderRadius.circular(16),
-									borderSide: const BorderSide(color: AppColors.verdeClaro, width: 1.2),
-								),
-								focusedBorder: OutlineInputBorder(
-									borderRadius: BorderRadius.circular(16),
-									borderSide: const BorderSide(color: AppColors.verdeOscuro, width: 1.5),
-								),
-								filled: true,
-								fillColor: AppColors.blanco,
-							),
+							decoration: _decoracionCampo('Correo'),
 						),
 						const SizedBox(height: 10),
 						TextField(
 							controller: _contrasenaController,
 							obscureText: true,
-							decoration: InputDecoration(
-								hintText: 'Contraseña',
-								hintStyle: AppTextStyles.texto(color: AppColors.grisClaro),
-								contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-								enabledBorder: OutlineInputBorder(
-									borderRadius: BorderRadius.circular(16),
-									borderSide: const BorderSide(color: AppColors.verdeClaro, width: 1.2),
-								),
-								focusedBorder: OutlineInputBorder(
-									borderRadius: BorderRadius.circular(16),
-									borderSide: const BorderSide(color: AppColors.verdeOscuro, width: 1.5),
-								),
-								filled: true,
-								fillColor: AppColors.blanco,
-							),
+							decoration: _decoracionCampo('Contraseña'),
 						),
 						const SizedBox(height: 6),
 						Row(

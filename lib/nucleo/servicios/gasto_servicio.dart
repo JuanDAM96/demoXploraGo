@@ -3,6 +3,14 @@ import 'package:xplorago/nucleo/conexion/supabase_conexion_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GastoServicio {
+  dynamic get _tablaGastos => SupabaseConexion.cliente.from('gastos');
+
+  List<Gasto> _mapearGastos(List<dynamic> respuesta) {
+    return respuesta
+        .map((mapa) => Gasto.fromMap(mapa as Map<String, dynamic>))
+        .toList();
+  }
+
   bool _esErrorEsquema(dynamic e) {
     if (e is! PostgrestException) return false;
     final String? code = e.code;
@@ -31,11 +39,7 @@ class GastoServicio {
     dynamic ultimoError;
     for (final Map<String, dynamic> payload in variantes) {
       try {
-        final dynamic r = await SupabaseConexion.cliente
-            .from('gastos')
-            .insert(payload)
-            .select()
-            .single();
+        final dynamic r = await _tablaGastos.insert(payload).select().single();
         return r as Map<String, dynamic>;
       } catch (e) {
         if (!_esErrorEsquema(e)) rethrow;
@@ -52,16 +56,14 @@ class GastoServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
+          final dynamic r = await _tablaGastos
               .select()
               .eq('id_grupo', grupoId)
               .order('fecha', ascending: false);
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
+          final dynamic r = await _tablaGastos
               .select()
               .eq('grupo_id', grupoId)
               .order('fecha', ascending: false);
@@ -69,9 +71,7 @@ class GastoServicio {
         },
       );
 
-    return respuesta
-          .map((mapa) => Gasto.fromMap(mapa as Map<String, dynamic>))
-          .toList();
+      return _mapearGastos(respuesta);
     } catch (e) {
       throw Exception('Error al cargar gastos: $e');
     }
@@ -83,16 +83,14 @@ class GastoServicio {
       final Map<String, dynamic> respuesta =
           await _conFallbackEsquema<Map<String, dynamic>>(
             primario: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('gastos')
+              final dynamic r = await _tablaGastos
                   .select()
                   .eq('id_gasto', gastoId)
                   .single();
               return r as Map<String, dynamic>;
             },
             fallback: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('gastos')
+              final dynamic r = await _tablaGastos
                   .select()
                   .eq('id', gastoId)
                   .single();
@@ -207,8 +205,7 @@ class GastoServicio {
       final Map<String, dynamic> respuesta =
           await _conFallbackEsquema<Map<String, dynamic>>(
             primario: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('gastos')
+              final dynamic r = await _tablaGastos
                   .update(<String, dynamic>{
                     'id_grupo': gasto.grupoId,
                     'descripcion': gasto.descripcion,
@@ -224,8 +221,7 @@ class GastoServicio {
               return r as Map<String, dynamic>;
             },
             fallback: () async {
-              final dynamic r = await SupabaseConexion.cliente
-                  .from('gastos')
+              final dynamic r = await _tablaGastos
                   .update(gasto.toMap())
                   .eq('id', gasto.id)
                   .select()
@@ -245,13 +241,10 @@ class GastoServicio {
     try {
       await _conFallbackEsquema<void>(
         primario: () async {
-          await SupabaseConexion.cliente
-              .from('gastos')
-              .delete()
-              .eq('id_gasto', gastoId);
+          await _tablaGastos.delete().eq('id_gasto', gastoId);
         },
         fallback: () async {
-          await SupabaseConexion.cliente.from('gastos').delete().eq('id', gastoId);
+          await _tablaGastos.delete().eq('id', gastoId);
         },
       );
     } catch (e) {
@@ -264,8 +257,7 @@ class GastoServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
+          final dynamic r = await _tablaGastos
               .select()
               .eq('id_grupo', grupoId)
               .eq('pagado_por', usuarioId)
@@ -273,8 +265,7 @@ class GastoServicio {
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
+          final dynamic r = await _tablaGastos
               .select()
               .eq('grupo_id', grupoId)
               .eq('pagado_por', usuarioId)
@@ -283,9 +274,7 @@ class GastoServicio {
         },
       );
 
-    return respuesta
-          .map((mapa) => Gasto.fromMap(mapa as Map<String, dynamic>))
-          .toList();
+      return _mapearGastos(respuesta);
     } catch (e) {
       throw Exception('Error al cargar gastos: $e');
     }
@@ -296,17 +285,11 @@ class GastoServicio {
     try {
       final List<dynamic> respuesta = await _conFallbackEsquema<List<dynamic>>(
         primario: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
-              .select('monto')
-              .eq('id_grupo', grupoId);
+          final dynamic r = await _tablaGastos.select('monto').eq('id_grupo', grupoId);
           return r as List<dynamic>;
         },
         fallback: () async {
-          final dynamic r = await SupabaseConexion.cliente
-              .from('gastos')
-              .select('monto')
-              .eq('grupo_id', grupoId);
+          final dynamic r = await _tablaGastos.select('monto').eq('grupo_id', grupoId);
           return r as List<dynamic>;
         },
       );
