@@ -2,6 +2,7 @@ class Gasto {
 	const Gasto({
 		required this.id,
 		required this.grupoId,
+		this.actividadId,
 		required this.descripcion,
 		required this.monto,
 		required this.pagadoPor,
@@ -12,6 +13,7 @@ class Gasto {
 
 	final String id;
 	final String grupoId;
+	final String? actividadId;
 	final String descripcion;
 	final double monto;
 	final String pagadoPor;
@@ -22,6 +24,7 @@ class Gasto {
 	Gasto copyWith({
 		String? id,
 		String? grupoId,
+		String? actividadId,
 		String? descripcion,
 		double? monto,
 		String? pagadoPor,
@@ -32,6 +35,7 @@ class Gasto {
 		return Gasto(
 			id: id ?? this.id,
 			grupoId: grupoId ?? this.grupoId,
+			actividadId: actividadId ?? this.actividadId,
 			descripcion: descripcion ?? this.descripcion,
 			monto: monto ?? this.monto,
 			pagadoPor: pagadoPor ?? this.pagadoPor,
@@ -55,6 +59,7 @@ class Gasto {
 		return Gasto(
 			id: (map['id_gasto'] ?? map['id'] ?? '').toString(),
 			grupoId: (map['id_grupo'] ?? map['grupo_id'] ?? '').toString(),
+			actividadId: (map['actividad_id'] ?? map['id_actividad'])?.toString(),
 			descripcion: (map['descripcion'] ?? map['concepto'] ?? '').toString(),
 			monto: ((map['monto'] as num?) ?? 0).toDouble(),
 			pagadoPor: (map['pagado_por'] ?? '').toString(),
@@ -71,6 +76,7 @@ class Gasto {
 		return <String, dynamic>{
 			'id': id,
 			'grupo_id': grupoId,
+			'actividad_id': actividadId,
 			'descripcion': descripcion,
 			'monto': monto,
 			'pagado_por': pagadoPor,

@@ -55,12 +55,59 @@ class _PantallaHomeState extends State<PantallaHome> {
     });
   }
 
-  void _unirseAGrupo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Proximamente: unirse por codigo de invitacion'),
-      ),
+  Future<void> _unirseAGrupo() async {
+    final TextEditingController tokenController = TextEditingController();
+
+    final String? token = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Unirse por invitacion'),
+          content: TextField(
+            controller: tokenController,
+            decoration: const InputDecoration(
+              hintText: 'Pega el token de invitacion',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, tokenController.text),
+              child: const Text('Unirme'),
+            ),
+          ],
+        );
+      },
     );
+
+    tokenController.dispose();
+
+    if (token == null || token.trim().isEmpty) return;
+
+    try {
+      final String grupoId = await _grupoControl.aceptarInvitacionPorToken(
+        token.trim(),
+      );
+      final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
+      if (usuarioId != null) {
+        await _grupoControl.cargarGrupos(usuarioId);
+        await _grupoControl.seleccionarGrupo(grupoId);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Te uniste al grupo correctamente')),
+      );
+      Navigator.pushNamed(context, RutasApp.grupo);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo unir al grupo: $e')));
+    }
   }
 
   @override

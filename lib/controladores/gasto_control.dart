@@ -34,6 +34,7 @@ class GastoControl extends ChangeNotifier {
   // Crear nuevo gasto
   Future<void> crearGasto({
     required String grupoId,
+    required String actividadId,
     required String descripcion,
     required double monto,
     required String pagadoPor,
@@ -45,6 +46,7 @@ class GastoControl extends ChangeNotifier {
       _error = null;
       final Gasto gasto = await _servicio.crear(
         grupoId: grupoId,
+        actividadId: actividadId,
         descripcion: descripcion,
         monto: monto,
         pagadoPor: pagadoPor,
@@ -99,6 +101,42 @@ class GastoControl extends ChangeNotifier {
   // Obtener total de gastos
   double obtenerTotal() {
     return _gastos.fold(0, (suma, gasto) => suma + gasto.monto);
+  }
+
+  Future<void> cargarGastosPorGrupoYActividad({
+    required String grupoId,
+    required String actividadId,
+  }) async {
+    try {
+      _cargando = true;
+      _error = null;
+      notifyListeners();
+
+      _gastos = await _servicio.obtenerPorGrupoYActividad(
+        grupoId: grupoId,
+        actividadId: actividadId,
+      );
+      _cargando = false;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _cargando = false;
+      notifyListeners();
+    }
+  }
+
+  Future<double> obtenerTotalPorGrupo(String grupoId) {
+    return _servicio.obtenerTotal(grupoId);
+  }
+
+  Future<double> obtenerTotalPorActividad({
+    required String grupoId,
+    required String actividadId,
+  }) {
+    return _servicio.obtenerTotalPorActividad(
+      grupoId: grupoId,
+      actividadId: actividadId,
+    );
   }
 
   // Obtener gastos pagados por un usuario

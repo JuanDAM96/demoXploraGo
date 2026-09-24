@@ -235,6 +235,120 @@ class _PantallaGruposState extends State<PantallaGrupos> {
     }
   }
 
+  Future<void> _mostrarDialogoCrearInvitacion() async {
+    if (!_esAdmin) {
+      _mostrarMensaje('Solo el admin puede crear invitaciones');
+      return;
+    }
+
+    final String? grupoId = _grupoControl.grupoActual?.id;
+    final String? usuarioId = SupabaseConexion.cliente.auth.currentUser?.id;
+    if (grupoId == null || usuarioId == null) return;
+
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController telefonoController = TextEditingController();
+    final TextEditingController mensajeController = TextEditingController();
+
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Crear invitacion'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email (opcional)',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: telefonoController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefono (opcional)',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: mensajeController,
+                  decoration: const InputDecoration(labelText: 'Mensaje'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Crear'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) {
+      emailController.dispose();
+      telefonoController.dispose();
+      mensajeController.dispose();
+      return;
+    }
+
+    try {
+      final Map<String, dynamic> invitacion = await _grupoControl
+          .crearInvitacion(
+            grupoId: grupoId,
+            invitadoPor: usuarioId,
+            email: emailController.text,
+            telefono: telefonoController.text,
+            mensaje: mensajeController.text,
+          );
+
+      final String token = (invitacion['token'] ?? '').toString();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Invitacion creada'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Comparte este token con tu invitado:'),
+                const SizedBox(height: 8),
+                SelectableText(
+                  token,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Listo'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      _mostrarMensaje('No se pudo crear invitacion: $e');
+    } finally {
+      emailController.dispose();
+      telefonoController.dispose();
+      mensajeController.dispose();
+    }
+  }
+
   Future<void> _confirmarEliminarGrupo() async {
     if (!_esAdmin) {
       _mostrarMensaje('Solo el admin puede eliminar el grupo');
@@ -455,6 +569,55 @@ class _PantallaGruposState extends State<PantallaGrupos> {
                                 ),
                                 onPressed: () => Navigator.pushNamed(
                                   context,
+                                  RutasApp.actividades,
+                                  arguments: _grupoControl.grupoActual?.id,
+                                ),
+                                child: Text(
+                                  'Planes',
+                                  style: AppTextStyles.boton(
+                                    color: AppColors.blanco,
+                                  ).copyWith(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: SizedBox(
+                              height: 38,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.coral,
+                                  side: const BorderSide(
+                                    color: AppColors.coral,
+                                    width: 2,
+                                  ),
+                                ),
+                                onPressed: _mostrarDialogoAgregarMiembro,
+                                child: Text(
+                                  'Anadir miembro',
+                                  style: AppTextStyles.boton(
+                                    color: AppColors.coral,
+                                  ).copyWith(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 38,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.verdeOscuro,
+                                  foregroundColor: AppColors.blanco,
+                                ),
+                                onPressed: () => Navigator.pushNamed(
+                                  context,
                                   RutasApp.gastos,
                                 ),
                                 child: Text(
@@ -478,9 +641,9 @@ class _PantallaGruposState extends State<PantallaGrupos> {
                                     width: 2,
                                   ),
                                 ),
-                                onPressed: _mostrarDialogoAgregarMiembro,
+                                onPressed: _mostrarDialogoCrearInvitacion,
                                 child: Text(
-                                  'Anadir miembro',
+                                  'Invitar',
                                   style: AppTextStyles.boton(
                                     color: AppColors.coral,
                                   ).copyWith(fontSize: 14),

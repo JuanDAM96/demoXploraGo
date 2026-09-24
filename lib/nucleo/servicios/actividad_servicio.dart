@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ActividadServicio {
   bool _esErrorEsquema(dynamic e) {
     if (e is! PostgrestException) return false;
-  final String? code = e.code;
+    final String? code = e.code;
     final String msg = e.message.toLowerCase();
     return code == '42703' ||
         code == '42P01' ||
@@ -230,6 +230,84 @@ class ActividadServicio {
       return Actividad.fromMap(respuesta);
     } catch (e) {
       throw Exception('Error al marcar como completada: $e');
+    }
+  }
+
+  Future<bool> obtenerEstadoAsistencia({
+    required String actividadId,
+    required String usuarioId,
+  }) async {
+    try {
+      final dynamic respuesta = await SupabaseConexion.cliente
+          .from('actividad_asistentes')
+          .select('apuntado')
+          .eq('actividad_id', actividadId)
+          .eq('usuario_id', usuarioId)
+          .maybeSingle();
+
+      if (respuesta == null) return false;
+      return (respuesta as Map<String, dynamic>)['apuntado'] == true;
+    } catch (e) {
+      throw Exception('Error al consultar asistencia: $e');
+    }
+  }
+
+  Future<void> guardarAsistencia({
+    required String actividadId,
+    required String usuarioId,
+    required bool apuntado,
+  }) async {
+    try {
+      await SupabaseConexion.cliente.from('actividad_asistentes').upsert(
+        <String, dynamic>{
+          'actividad_id': actividadId,
+          'usuario_id': usuarioId,
+          'apuntado': apuntado,
+          'actualizado_en': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'actividad_id,usuario_id',
+      );
+    } catch (e) {
+      throw Exception('Error al guardar asistencia: $e');
+    }
+  }
+
+  Future<bool> alternarAsistencia({
+    required String actividadId,
+    required String usuarioId,
+  }) async {
+    final bool estadoActual = await obtenerEstadoAsistencia(
+      actividadId: actividadId,
+      usuarioId: usuarioId,
+    );
+    final bool nuevoEstado = !estadoActual;
+
+    await guardarAsistencia(
+      actividadId: actividadId,
+      usuarioId: usuarioId,
+      apuntado: nuevoEstado,
+    );
+
+    return nuevoEstado;
+  }
+
+  Future<List<String>> obtenerUsuarioIdsApuntados(String actividadId) async {
+    try {
+      final dynamic respuesta = await SupabaseConexion.cliente
+          .from('actividad_asistentes')
+          .select('usuario_id, apuntado')
+          .eq('actividad_id', actividadId)
+          .eq('apuntado', true);
+
+      return (respuesta as List<dynamic>)
+          .map(
+            (dynamic fila) =>
+                (fila as Map<String, dynamic>)['usuario_id']?.toString() ?? '',
+          )
+          .where((String id) => id.isNotEmpty)
+          .toList();
+    } catch (e) {
+      throw Exception('Error al obtener apuntados: $e');
     }
   }
 }

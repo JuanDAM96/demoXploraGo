@@ -6,6 +6,29 @@ import 'package:uuid/uuid.dart';
 class GrupoServicio {
   static const Uuid _uuid = Uuid();
 
+  bool _esErrorEsquema(dynamic e) {
+    if (e is! PostgrestException) return false;
+    final String? code = e.code;
+    final String msg = e.message.toLowerCase();
+    return code == '42703' ||
+        code == '42P01' ||
+        code == 'PGRST204' ||
+        msg.contains('column') ||
+        msg.contains('relation');
+  }
+
+  Future<T> _conFallbackEsquema<T>({
+    required Future<T> Function() primario,
+    required Future<T> Function() fallback,
+  }) async {
+    try {
+      return await primario();
+    } catch (e) {
+      if (!_esErrorEsquema(e)) rethrow;
+      return fallback();
+    }
+  }
+
   Future<void> _asegurarSesionValida() async {
     final auth = SupabaseConexion.cliente.auth;
     final Session? session = auth.currentSession;
@@ -203,6 +226,81 @@ class GrupoServicio {
       return (respuesta as Map<String, dynamic>)['rol']?.toString();
     } catch (e) {
       throw Exception('Error al obtener rol del miembro: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearInvitacion({
+    required String grupoId,
+    required String invitadoPor,
+    String? email,
+    String? telefono,
+    String? mensaje,
+  }) async {
+    await _asegurarSesionValida();
+
+    final String? emailNormalizado = email?.trim().isEmpty == true
+        ? null
+        : email?.trim();
+    final String? telefonoNormalizado = telefono?.trim().isEmpty == true
+        ? null
+        : telefono?.trim();
+
+    if (emailNormalizado == null && telefonoNormalizado == null) {
+      throw Exception('Debes indicar email o telefono para invitar.');
+    }
+
+    try {
+      return await _conFallbackEsquema<Map<String, dynamic>>(
+        primario: () async {
+          final dynamic respuesta = await SupabaseConexion.cliente
+              .from('invitaciones_grupo')
+              .insert(<String, dynamic>{
+                'id_grupo': grupoId,
+                'email': emailNormalizado,
+                'telefono': telefonoNormalizado,
+                'mensaje': mensaje,
+                'invitado_por': invitadoPor,
+              })
+              .select('id, token, estado, expira_en')
+              .single();
+          return respuesta as Map<String, dynamic>;
+        },
+        fallback: () async {
+          final dynamic respuesta = await SupabaseConexion.cliente
+              .from('invitaciones_grupo')
+              .insert(<String, dynamic>{
+                'grupo_id': grupoId,
+                'email': emailNormalizado,
+                'telefono': telefonoNormalizado,
+                'mensaje': mensaje,
+                'invitado_por': invitadoPor,
+              })
+              .select('id, token, estado, expira_en')
+              .single();
+          return respuesta as Map<String, dynamic>;
+        },
+      );
+    } catch (e) {
+      throw Exception('Error al crear invitacion: $e');
+    }
+  }
+
+  Future<String> aceptarInvitacionPorToken(String token) async {
+    await _asegurarSesionValida();
+    try {
+      final dynamic resultado = await SupabaseConexion.cliente.rpc(
+        'aceptar_invitacion_grupo',
+        params: <String, dynamic>{'p_token': token.trim()},
+      );
+
+      final String grupoId = (resultado ?? '').toString();
+      if (grupoId.isEmpty) {
+        throw Exception('La funcion no devolvio el id de grupo.');
+      }
+
+      return grupoId;
+    } catch (e) {
+      throw Exception('Error al aceptar invitacion: $e');
     }
   }
 }

@@ -180,6 +180,40 @@ class GrupoControl extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> crearInvitacion({
+    required String grupoId,
+    required String invitadoPor,
+    String? email,
+    String? telefono,
+    String? mensaje,
+  }) async {
+    try {
+      _error = null;
+      return await _servicio.crearInvitacion(
+        grupoId: grupoId,
+        invitadoPor: invitadoPor,
+        email: email,
+        telefono: telefono,
+        mensaje: mensaje,
+      );
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<String> aceptarInvitacionPorToken(String token) async {
+    try {
+      _error = null;
+      return await _servicio.aceptarInvitacionPorToken(token);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   // Limpiar estado
   void limpiar() {
     _grupos = <Grupo>[];
