@@ -28,4 +28,4 @@ Evitar bloqueo por complejidad de seguridad al inicio; protección suficiente pa
 ## Trazabilidad
 - HUs: HU-002 (Registro/Login), HU-003 (Perfil)
 - RNFs: RNF-002 (Disponibilidad)
-- Trello: https://trello.com/c/RcVbVX9s
+- Trello: https://trello.com/c/s5zLmpJl
