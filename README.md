@@ -28,9 +28,9 @@ XploraGo es una aplicación multiplataforma orientada a un público joven (18 a 
 
 | Archivo | Descripción |
 |----------|--------------|
-| [Trello Board](https://trello.com/b/XPFtVCuo/pidam2b-extremgo-xplorago-pendiente-github-y-doc) | Tablero con historias de usuario y backlog |
+| [Trello Board](https://trello.com/invite/b/6ab697cf79311d369b0da56e/ATTI6f922ca83f389f72e68365e674decfd1D78CF5AE/pidam2b-extremgo-xplorago) | Tablero con historias de usuario y backlog |
 | [Repositorio GitHub](https://github.com/JuanDAM96/XploraGo_PI.git) | Repositorio principal del proyecto |
-| [Figma](https://www.figma.com/design/J1ZV9lXN2PyFJQTEgxafe4/XploraGo?node-id=0-1&t=gYI58brcpJY12BHN-1) | Archivo .fig |
+| [Figma](https://www.figma.com/design/s5pg8VBEK6YNujlkgyLbX4/XploraGo?m=auto&t=A1FqG3KrLMezIaVR-1) | Archivo .fig |
 
 ---
 
