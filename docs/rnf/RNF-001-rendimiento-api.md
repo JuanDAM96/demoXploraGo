@@ -18,6 +18,7 @@ p95 de latencia por endpoint (ms) en entorno de demo.
 
 ## Trazabilidad
 - HU: HU-001, HU-004, HU-005, HU-006, HU-007
+- Trello: https://trello.com/c/kaaZTFmP
 - Release: E1-v1.1
 
 ## Historial de cambios
