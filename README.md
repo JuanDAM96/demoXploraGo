@@ -11,8 +11,7 @@
 
 ## 📘 Descripción general
 
-XploraGo es una aplicación multiplataforma orientada a jóvenes de 18 a 35 años para organizar viajes colaborativos por Extremadura.  
-Permite crear grupos, planificar rutas, gestionar gastos y descubrir actividades locales, fomentando el turismo sostenible y el consumo local. CAMBIAR
+XploraGo es una aplicación multiplataforma orientada a un público joven (18 a 35 años) que busca simplificar y centralizar la organización de viajes y actividades sociales en grupo. El producto reúne en una única solución la creación de grupos, la gestión de invitaciones, la planificación de itinerarios, el control de asistencia, el reparto transparente de gastos y la comunicación fluida vía chat.
 
 ---
 
