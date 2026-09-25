@@ -28,4 +28,4 @@ La arquitectura monolítica es simple de desplegar, entender y mantener para un 
 ## Trazabilidad
 - HUs: HU-001 (Crear grupo), HU-004 (Actividades)
 - RNFs: RNF-001 (Rendimiento)
-- Trello: https://trello.com/c/oDQT0RxE
+- Trello: https://trello.com/c/c2roY9oA
