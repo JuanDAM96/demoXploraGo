@@ -19,6 +19,7 @@ Tasa de éxito de tarea (porcentaje de usuarios que completan la tarea sin ayuda
 -  
 ## Trazabilidad
 - HU: HU-001, HU-005
+- Trello: https://trello.com/c/pDjNDusN
 - Release: E1-v1.1
 
 ## Historial de cambios
