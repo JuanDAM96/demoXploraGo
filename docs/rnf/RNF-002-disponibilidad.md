@@ -19,6 +19,7 @@ Disponibilidad percibida durante la ventana de demo (uptime %).
 
 ## Trazabilidad
 - HU: HU-002, HU-007
+- Trello: https://trello.com/c/2lETyo5V
 - Release: E1-v1.1
 
 ## Historial de cambios
